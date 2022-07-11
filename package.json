@@ -2,9 +2,9 @@
   "name": "guihoncdn",
   "version": "1.0.0",
   "description": "a app to serve file for guihon",
-  "main": "cdn.js",
+  "main": "src/cdn.js",
   "scripts": {
-    "start": "nodemon cdn.js",
+    "start": "nodemon src/cdn.js",
     "test": "jest"
   },
   "repository": {
