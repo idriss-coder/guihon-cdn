@@ -7,8 +7,9 @@ const MEDIUM_FOLDER_QUALITY = "medium"
 const NORMAL_QUALITY = "normal"
 const NOT_FOUND_FILE = "notFound.png"
 const PATH_TO_FILE = "libs/files"
+const PATH_TO_IMAGE = path.join(PATH_TO_FILE, "images")
 
-const assetFolder = path.resolve(PATH_TO_FILE)
+const assetFolder = path.resolve(PATH_TO_IMAGE)
 const mediumFolder = path.join(assetFolder, MEDIUM_FOLDER_QUALITY)
 
 Router.get("/:image", (req, res) => {
