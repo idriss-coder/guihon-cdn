@@ -6,11 +6,12 @@ const genereteResponseMessage = (code, status, message) => {
     }
 }
 
-const generateErrorResponse = (message) => {
+const generateErrorResponse = (message, data = {}) => {
     return {
         code: 500,
         status: 'error',
-        message: message
+        message: message,
+        ...data
     }
 }
 

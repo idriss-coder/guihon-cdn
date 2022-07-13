@@ -85,85 +85,94 @@ Router.get("/:image", (req, res) => {
     }
 })
 
+Router.post("/upload", async (req, res) => {
+    req.pipe(req.busboy)
+    if (req.busboy) {
+        req.busboy.on('file', async (_name, file, info) => {
+            const fileName = info.filename
+            const fileExtension = path.extname(fileName)
+            const hanshName = HASH_PREFIX + Str.random(HASH_SIZE / 2) + Date.now() + Str.random(HASH_SIZE / 2)
+            const customFileName = hanshName + fileExtension
+            const customFileName_webp = hanshName + WEBP_EXTENSION
+            const filePath = path.join(highFolder, customFileName)
+
+            await file.pipe(fs.createWriteStream(filePath)).on("finish", async () => {
+                await sharp(path.join(filePath))
+                    .webp()
+                    .toFile(path.resolve(highFolderWebp, customFileName_webp))
+                
+            })
+
+            req.busboy.on('finish', async () => {
+                await sharp(filePath)
+                    .resize(NORMAL_SIZE)
+                    .toFile(path.resolve(normalFolder, customFileName))
+                    .then(async (_buffer) => {}).catch(err => {
+                        console.log(err)
+                        res.status(500).json(generateErrorResponse('Error on resize image to normal quality', err))
+                    })
+                
+                await sharp(path.join(normalFolder, customFileName))
+                    .webp()
+                    .toFile(path.resolve(normalFolderWebp, customFileName_webp))
+
+                await sharp(filePath)
+                    .resize(MEDIUM_SIZE)
+                    .toFile(path.resolve(mediumFolder, customFileName))
+                    .then(async (_buffer) => { })
+                    .catch(err => {
+                        console.log(err)
+                        res.status(500).json(generateErrorResponse('Error on resize image to medium quality', err))
+                    })
+
+                await sharp(path.join(mediumFolder, customFileName))
+                    .webp()
+                    .toFile(path.resolve(mediumFolderWebp, customFileName_webp))
+
+                await sharp(path.join(mediumFolder, customFileName))
+                    .resize(LOW_SIZE)
+                    .toFile(path.resolve(lowFolder, customFileName))
+
+                await sharp(path.join(lowFolder, customFileName))
+                    .webp()
+                    .toFile(path.resolve(lowFolderWebp, customFileName_webp))
+
+                res.status(200).json(generateSuccessResponse("File uploaded successfully", { file: customFileName }))
+            })
+        })
+
+        req.busboy.on('error', (err) => {
+            console.log(err)
+            res.status(500).json(generateErrorResponse('Error on uploading file'))
+        })
+    }
+})
+
 Router.delete("/:image", (req, res) => {
     const params = req.params
     const imageName = params.image
+    const webpVersion = getOptimizeFile(imageName)
 
-    const image = path.join(mediumFolder, imageName)
-    const imageWebp = path.join(mediumFolderWebp, imageName)
+    if (fs.existsSync(path.resolve(highFolder, imageName))){
+        fs.unlinkSync(path.join(lowFolder, imageName))
+        fs.unlinkSync(path.join(lowFolderWebp, webpVersion))
 
-    if(fs.existsSync(image)){
-        fs.unlinkSync(image)
-        fs.unlinkSync(imageWebp)
+        fs.unlinkSync(path.join(mediumFolder, imageName))
+        fs.unlinkSync(path.join(mediumFolderWebp, webpVersion))
+
+        fs.unlinkSync(path.join(normalFolder, imageName))
+        fs.unlinkSync(path.join(normalFolderWebp, webpVersion))
+
+        fs.unlinkSync(path.join(highFolder, imageName))
+        fs.unlinkSync(path.join(highFolderWebp, webpVersion))
+
+
+        
         res.status(200).json(generateSuccessResponse("Image deleted"))
     }else{
         res.status(404).json(generateErrorResponse("Image not found"))
     }
 })
-
-Router.post("/upload", async (req, res)=>{
-    req.pipe(req.busboy)
-    if (req.busboy) {
-        req.busboy.on('file', async(_name, file, info) => {
-            const fileName = info.filename
-            const fileExtension = path.extname(fileName)
-            const hanshName = HASH_PREFIX + Str.random(HASH_SIZE / 2) + Date.now() + Str.random(HASH_SIZE / 2)
-            const customFileName = hanshName + fileExtension 
-            const customFileName_webp = hanshName + WEBP_EXTENSION
-            const filePath = path.join(highFolder, customFileName)
-            
-            file.pipe(fs.createWriteStream(filePath)).on("finish", async() => {
-                await sharp(path.join(filePath))
-                    .webp()
-                    .toFile(path.resolve(highFolderWebp, customFileName_webp))
-            })
-
-            req.busboy.on('finish', async() => {
-                await sharp(filePath)
-                    .resize(NORMAL_SIZE)
-                    .toFile(path.resolve(normalFolder, customFileName))
-                    .then(async (_buffer)=>{
-                        await sharp(path.join(normalFolder, customFileName))
-                        .webp()
-                        .toFile(path.resolve(normalFolderWebp, customFileName_webp))
-
-                        await sharp(filePath)
-                            .resize(MEDIUM_SIZE)
-                            .toFile(path.resolve(mediumFolder, customFileName))
-                            .then(async (_buffer) => {
-                                await sharp(path.join(mediumFolder, customFileName))
-                                    .webp()
-                                    .toFile(path.resolve(mediumFolderWebp, customFileName_webp))
-
-                                await sharp(path.join(mediumFolder, customFileName))
-                                    .resize(LOW_SIZE)
-                                    .toFile(path.resolve(lowFolder, customFileName))
-                                
-                                await sharp(path.join(lowFolder, customFileName))
-                                    .webp()
-                                    .toFile(path.resolve(lowFolderWebp, customFileName_webp))
-
-                                res.status(200).json(generateSuccessResponse("File uploaded successfully", { file: customFileName }))
-
-                            })
-                            .catch(err => {
-                                console.log(err)
-                                res.status(500).json(generateErrorResponse('Error on resize image'))
-                            })
-                    }).catch(err => {
-                        console.log(err)
-                        res.status(500).json(generateErrorResponse('Error on resize image'))
-                    })
-                })
-            })
-
-            req.busboy.on('error', (err) => {
-                console.log(err)
-                res.status(500).json(generateErrorResponse('Error on uploading file'))
-            })
-    }
-})
-
 
 module.exports = Router
 
