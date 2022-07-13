@@ -4,31 +4,39 @@ const fs = require("fs")
 const sharp = require('sharp')
 const Str = require('@supercharge/strings')
 const { generateErrorResponse, generateSuccessResponse } = require("../func/generateMessage")
+const { getOptimizeFile } = require("../func/spliter")
 
 const MEDIUM_FOLDER_QUALITY = "medium"
 const NORMAL_FOLDER_QUALITY = "normal"
 const HIGH_FOLDER_QUALITY = "high"
 const WEBP_FOLDER_QUALITY = "webp"
+const LOW_FOLDER_QUALITY = "low"
+
 const NOT_FOUND_FILE = "notFound.png"
 const PATH_TO_FILE = "libs/files"
 const PATH_TO_IMAGE = path.join(PATH_TO_FILE, "images")
 const HASH_SIZE = 8
 const HASH_PREFIX = "guihon_"
+
 const MEDIUM_SIZE = 240
 const NORMAL_SIZE = 700
+const LOW_SIZE = 36
+
 const WEBP_EXTENSION = ".webp"
 
 const assetFolder = path.resolve(PATH_TO_IMAGE)
 
+const lowFolder = path.join(assetFolder, LOW_FOLDER_QUALITY)
 const mediumFolder = path.join(assetFolder, MEDIUM_FOLDER_QUALITY)
 const normalFolder = path.join(assetFolder, NORMAL_FOLDER_QUALITY)
 const highFolder = path.join(assetFolder, HIGH_FOLDER_QUALITY)
 
 const webpFolder = path.join(assetFolder, WEBP_FOLDER_QUALITY)
 
-const mediumFolderWebp = path.join(assetFolder, WEBP_FOLDER_QUALITY, MEDIUM_FOLDER_QUALITY)
-const normalFolderWebp = path.join(assetFolder, WEBP_FOLDER_QUALITY, NORMAL_FOLDER_QUALITY)
-const highFolderWebp = path.join(assetFolder, WEBP_FOLDER_QUALITY, HIGH_FOLDER_QUALITY)
+const lowFolderWebp = path.join(webpFolder, LOW_FOLDER_QUALITY)
+const mediumFolderWebp = path.join(webpFolder, MEDIUM_FOLDER_QUALITY)
+const normalFolderWebp = path.join(webpFolder, NORMAL_FOLDER_QUALITY)
+const highFolderWebp = path.join(webpFolder, HIGH_FOLDER_QUALITY)
 
 Router.get("/:image", (req, res) => {
     const query = req.query
@@ -38,21 +46,31 @@ Router.get("/:image", (req, res) => {
 
     const imageName = params.image
     const quality = query.quality
+    const compressed = query.compressed
 
     let image = path.join(mediumFolder, imageName)
 
-    if(quality){
-        if (quality == MEDIUM_FOLDER_QUALITY){
-            image = path.join(mediumFolder, imageName)
-        }
 
+    if(quality){
+        const webpName = getOptimizeFile(imageName)
+
+        if (quality == MEDIUM_FOLDER_QUALITY){
+            image = compressed ? path.join(mediumFolderWebp, webpName) : path.join(mediumFolder, imageName)
+        }
+        
         if (quality == NORMAL_FOLDER_QUALITY) {
-            image = path.resolve(normalFolder, imageName)
+            image = compressed ? path.resolve(normalFolderWebp, webpName) : path.resolve(normalFolder, imageName)
         }
 
         if (quality == HIGH_FOLDER_QUALITY) {
-            image = path.resolve(highFolder, imageName)
+            image = compressed ? path.resolve(highFolderWebp, webpName) : path.resolve(highFolder, imageName)
         }
+
+        if(quality == LOW_FOLDER_QUALITY){
+            image = compressed ? path.resolve(lowFolderWebp, webpName) : path.resolve(lowFolder, imageName)
+        }
+
+
     }
 
     console.log(image)
@@ -64,6 +82,22 @@ Router.get("/:image", (req, res) => {
     }else{
         res.type = path.extname(notFound)
         res.status(404).sendFile(notFound)
+    }
+})
+
+Router.delete("/:image", (req, res) => {
+    const params = req.params
+    const imageName = params.image
+
+    const image = path.join(mediumFolder, imageName)
+    const imageWebp = path.join(mediumFolderWebp, imageName)
+
+    if(fs.existsSync(image)){
+        fs.unlinkSync(image)
+        fs.unlinkSync(imageWebp)
+        res.status(200).json(generateSuccessResponse("Image deleted"))
+    }else{
+        res.status(404).json(generateErrorResponse("Image not found"))
     }
 })
 
@@ -100,6 +134,15 @@ Router.post("/upload", async (req, res)=>{
                                 await sharp(path.join(mediumFolder, customFileName))
                                     .webp()
                                     .toFile(path.resolve(mediumFolderWebp, customFileName_webp))
+
+                                await sharp(path.join(mediumFolder, customFileName))
+                                    .resize(LOW_SIZE)
+                                    .toFile(path.resolve(lowFolder, customFileName))
+                                
+                                await sharp(path.join(lowFolder, customFileName))
+                                    .webp()
+                                    .toFile(path.resolve(lowFolderWebp, customFileName_webp))
+
                                 res.status(200).json(generateSuccessResponse("File uploaded successfully", { file: customFileName }))
 
                             })
