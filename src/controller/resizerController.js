@@ -96,7 +96,19 @@ Router.post("/upload", async (req, res) => {
             const customFileName_webp = hanshName + WEBP_EXTENSION
             const filePath = path.join(highFolder, customFileName)
 
-            await file.pipe(fs.createWriteStream(filePath)).on("finish", async () => {
+            let progress = 0
+            let reader = file
+            let writer = fs.createWriteStream(filePath)
+
+            reader.on("data", (chunk) => {
+                progress += chunk.length
+
+            })
+
+            reader.pipe(writer)
+
+            reader.on("end", async() => {
+                console.log(`Generating optimised file`)
                 await sharp(path.join(filePath))
                     .webp()
                     .toFile(path.resolve(highFolderWebp, customFileName_webp))
@@ -107,11 +119,11 @@ Router.post("/upload", async (req, res) => {
                 await sharp(filePath)
                     .resize(NORMAL_SIZE)
                     .toFile(path.resolve(normalFolder, customFileName))
-                    .then(async (_buffer) => {}).catch(err => {
+                    .then(async (_buffer) => { }).catch(err => {
                         console.log(err)
                         res.status(500).json(generateErrorResponse('Error on resize image to normal quality', err))
                     })
-                
+
                 await sharp(path.join(normalFolder, customFileName))
                     .webp()
                     .toFile(path.resolve(normalFolderWebp, customFileName_webp))
@@ -137,8 +149,13 @@ Router.post("/upload", async (req, res) => {
                     .webp()
                     .toFile(path.resolve(lowFolderWebp, customFileName_webp))
 
+                console.log(`${customFileName} uploaded and resized sussefully`)
+
                 res.status(200).json(generateSuccessResponse("File uploaded successfully", { file: customFileName }))
             })
+
+            console.log(`upload of ${fileName} is complete`)
+
         })
 
         req.busboy.on('error', (err) => {
