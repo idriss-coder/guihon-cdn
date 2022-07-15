@@ -15,8 +15,8 @@ app.use(busboy())
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(resizerController)
-app.get('/', (req, res) => {
-  res.status(200).json({
+app.use((req, res, _next) => {
+  res.status(403).json({
     code: 403,
     status: 'Access refuser ',
     message: 'This is private CDN server for guihon'
