@@ -2,6 +2,8 @@
 
 *How to use an api*
 
+path/to/location = httpd://cdn.guihon.cm
+
 ## Add image to server
 
 ```
@@ -31,7 +33,7 @@ axios.delete("path/to/location/{imageName}")
 
 ### Supported query params
 
-| *quality*   | low  | medium | normal | High |
-| ------------- | ---- | ------ | ------ | ---- |
+| *quality*    | low  | medium | normal | High |
+| -------------- | ---- | ------ | ------ | ---- |
 | *compressed* | true |        |        |      |
-|               |      |        |        |      |
+|                |      |        |        |      |
