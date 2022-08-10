@@ -19,7 +19,7 @@ const LOW_FOLDER_VIDEO_QUALITY = "low"
 const HD_FOLDER_VIDEO_QUALITY = "hd"
 const FHD_FOLDER_VIDEO_QUALITY = "fhd"
 
-const NOT_FOUND_FILE = "notFound.png"
+const NOT_FOUND_FILE = "GUIHON_NOT_FOUND.jpg"
 const PATH_TO_FILE = "libs/files"
 
 const PATH_TO_IMAGE = path.join(PATH_TO_FILE, "images")
