@@ -6,15 +6,25 @@ const Str = require('@supercharge/strings')
 const { generateErrorResponse, generateSuccessResponse } = require("../func/generateMessage")
 const { getOptimizeFile } = require("../func/spliter")
 
+const IMG_EXT_ARRAY = ["jpg", "webp", "png", "gif", "jpeg"]
+const VIDEO_EXT_ARRAY = ["mp4", "mkv", "mov", "avi"]
+
 const MEDIUM_FOLDER_QUALITY = "medium"
 const NORMAL_FOLDER_QUALITY = "normal"
 const HIGH_FOLDER_QUALITY = "high"
 const WEBP_FOLDER_QUALITY = "webp"
 const LOW_FOLDER_QUALITY = "low"
 
+const LOW_FOLDER_VIDEO_QUALITY = "low"
+const HD_FOLDER_VIDEO_QUALITY = "hd"
+const FHD_FOLDER_VIDEO_QUALITY = "fhd"
+
 const NOT_FOUND_FILE = "notFound.png"
 const PATH_TO_FILE = "libs/files"
+
 const PATH_TO_IMAGE = path.join(PATH_TO_FILE, "images")
+const PATH_TO_VIDEO = path.join(PATH_TO_FILE, "video")
+
 const HASH_SIZE = 8
 const HASH_PREFIX = "guihon_"
 
@@ -31,12 +41,17 @@ const mediumFolder = path.join(assetFolder, MEDIUM_FOLDER_QUALITY)
 const normalFolder = path.join(assetFolder, NORMAL_FOLDER_QUALITY)
 const highFolder = path.join(assetFolder, HIGH_FOLDER_QUALITY)
 
-const webpFolder = path.join(assetFolder, WEBP_FOLDER_QUALITY)
+const lowVideoFolder = path.join(assetFolder, LOW_FOLDER_VIDEO_QUALITY)
+const hdVideoFolder = path.join(assetFolder, HD_FOLDER_VIDEO_QUALITY)
+const fhdVideoFolder = path.join(assetFolder, FHD_FOLDER_VIDEO_QUALITY)
 
+const webpFolder = path.join(assetFolder, WEBP_FOLDER_QUALITY)
 const lowFolderWebp = path.join(webpFolder, LOW_FOLDER_QUALITY)
 const mediumFolderWebp = path.join(webpFolder, MEDIUM_FOLDER_QUALITY)
 const normalFolderWebp = path.join(webpFolder, NORMAL_FOLDER_QUALITY)
 const highFolderWebp = path.join(webpFolder, HIGH_FOLDER_QUALITY)
+
+
 
 Router.get("/:image", (req, res) => {
     const query = req.query
@@ -107,54 +122,59 @@ Router.post("/upload", async (req, res) => {
 
             reader.pipe(writer)
 
-            reader.on("end", async() => {
-                console.log(`Generating optimised file`)
-                await sharp(path.join(filePath))
-                    .webp()
-                    .toFile(path.resolve(highFolderWebp, customFileName_webp))
+            if(fileExtension in IMG_EXT_ARRAY){
+                reader.on("end", async () => {
+                    console.log(`Generating optimised file`)
+                    await sharp(path.join(filePath))
+                        .webp()
+                        .toFile(path.resolve(highFolderWebp, customFileName_webp))
+
+                })
+
+                req.busboy.on('finish', async () => {
+                    await sharp(filePath)
+                        .resize(NORMAL_SIZE)
+                        .toFile(path.resolve(normalFolder, customFileName))
+                        .then(async (_buffer) => { }).catch(err => {
+                            console.log(err)
+                            res.status(500).json(generateErrorResponse('Error on resize image to normal quality', err))
+                        })
+
+                    await sharp(path.join(normalFolder, customFileName))
+                        .webp()
+                        .toFile(path.resolve(normalFolderWebp, customFileName_webp))
+
+                    await sharp(filePath)
+                        .resize(MEDIUM_SIZE)
+                        .toFile(path.resolve(mediumFolder, customFileName))
+                        .then(async (_buffer) => { })
+                        .catch(err => {
+                            console.log(err)
+                            res.status(500).json(generateErrorResponse('Error on resize image to medium quality', err))
+                        })
+
+                    await sharp(path.join(mediumFolder, customFileName))
+                        .webp()
+                        .toFile(path.resolve(mediumFolderWebp, customFileName_webp))
+
+                    await sharp(path.join(mediumFolder, customFileName))
+                        .resize(LOW_SIZE)
+                        .toFile(path.resolve(lowFolder, customFileName))
+
+                    await sharp(path.join(lowFolder, customFileName))
+                        .webp()
+                        .toFile(path.resolve(lowFolderWebp, customFileName_webp))
+
+                    console.log(`${customFileName} uploaded and resized sussefully`)
+
+                    res.status(200).json(generateSuccessResponse("File uploaded successfully", { file: customFileName }))
+                })
+
+                console.log(`upload of ${fileName} is complete`)
                 
-            })
-
-            req.busboy.on('finish', async () => {
-                await sharp(filePath)
-                    .resize(NORMAL_SIZE)
-                    .toFile(path.resolve(normalFolder, customFileName))
-                    .then(async (_buffer) => { }).catch(err => {
-                        console.log(err)
-                        res.status(500).json(generateErrorResponse('Error on resize image to normal quality', err))
-                    })
-
-                await sharp(path.join(normalFolder, customFileName))
-                    .webp()
-                    .toFile(path.resolve(normalFolderWebp, customFileName_webp))
-
-                await sharp(filePath)
-                    .resize(MEDIUM_SIZE)
-                    .toFile(path.resolve(mediumFolder, customFileName))
-                    .then(async (_buffer) => { })
-                    .catch(err => {
-                        console.log(err)
-                        res.status(500).json(generateErrorResponse('Error on resize image to medium quality', err))
-                    })
-
-                await sharp(path.join(mediumFolder, customFileName))
-                    .webp()
-                    .toFile(path.resolve(mediumFolderWebp, customFileName_webp))
-
-                await sharp(path.join(mediumFolder, customFileName))
-                    .resize(LOW_SIZE)
-                    .toFile(path.resolve(lowFolder, customFileName))
-
-                await sharp(path.join(lowFolder, customFileName))
-                    .webp()
-                    .toFile(path.resolve(lowFolderWebp, customFileName_webp))
-
-                console.log(`${customFileName} uploaded and resized sussefully`)
-
-                res.status(200).json(generateSuccessResponse("File uploaded successfully", { file: customFileName }))
-            })
-
-            console.log(`upload of ${fileName} is complete`)
+            }else if(fileExtension in VIDEO_EXT_ARRAY){
+                
+            }
 
         })
 
