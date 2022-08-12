@@ -6,7 +6,7 @@ const Str = require('@supercharge/strings')
 const { generateErrorResponse, generateSuccessResponse } = require("../func/generateMessage")
 const { getOptimizeFile } = require("../func/spliter")
 
-const IMG_EXT_ARRAY = ["jpg", "webp", "png", "gif", "jpeg"]
+const IMG_EXT_ARRAY = [".jpg", ".webp", ".png", ".gif", ".jpeg"]
 const VIDEO_EXT_ARRAY = ["mp4", "mkv", "mov", "avi"]
 
 const MEDIUM_FOLDER_QUALITY = "medium"
@@ -101,6 +101,7 @@ Router.get("/:image", (req, res) => {
 })
 
 Router.post("/upload", async (req, res) => {
+    console.log("upload....")
     req.pipe(req.busboy)
     if (req.busboy) {
         req.busboy.on('file', async (_name, file, info) => {
@@ -121,8 +122,8 @@ Router.post("/upload", async (req, res) => {
             })
 
             reader.pipe(writer)
-
-            if(fileExtension in IMG_EXT_ARRAY){
+            console.log(fileExtension)
+            if (IMG_EXT_ARRAY.includes(fileExtension.toLowerCase())){
                 reader.on("end", async () => {
                     console.log(`Generating optimised file`)
                     await sharp(path.join(filePath))
@@ -137,12 +138,15 @@ Router.post("/upload", async (req, res) => {
                         .toFile(path.resolve(normalFolder, customFileName))
                         .then(async (_buffer) => { }).catch(err => {
                             console.log(err)
-                            res.status(500).json(generateErrorResponse('Error on resize image to normal quality', err))
+                            res.status(500).json(generateErrorResponse('Error on resize image to normal quality', { errMsg: err }))
                         })
+
+                
 
                     await sharp(path.join(normalFolder, customFileName))
                         .webp()
                         .toFile(path.resolve(normalFolderWebp, customFileName_webp))
+                   
 
                     await sharp(filePath)
                         .resize(MEDIUM_SIZE)
@@ -152,19 +156,20 @@ Router.post("/upload", async (req, res) => {
                             console.log(err)
                             res.status(500).json(generateErrorResponse('Error on resize image to medium quality', err))
                         })
+                  
 
                     await sharp(path.join(mediumFolder, customFileName))
                         .webp()
                         .toFile(path.resolve(mediumFolderWebp, customFileName_webp))
-
+                   
                     await sharp(path.join(mediumFolder, customFileName))
                         .resize(LOW_SIZE)
                         .toFile(path.resolve(lowFolder, customFileName))
-
+                    
                     await sharp(path.join(lowFolder, customFileName))
                         .webp()
                         .toFile(path.resolve(lowFolderWebp, customFileName_webp))
-
+                  
                     console.log(`${customFileName} uploaded and resized sussefully`)
 
                     res.status(200).json(generateSuccessResponse("File uploaded successfully", { file: customFileName }))
@@ -174,6 +179,8 @@ Router.post("/upload", async (req, res) => {
                 
             }else if(fileExtension in VIDEO_EXT_ARRAY){
                 
+            }else{
+                res.status(500).json(generateErrorResponse("Fichier non reconus", "extenxion not supported"))
             }
 
         })
