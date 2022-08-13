@@ -124,7 +124,7 @@ Router.post("/upload", async (req, res) => {
             reader.pipe(writer)
             console.log(fileExtension)
             if (IMG_EXT_ARRAY.includes(fileExtension.toLowerCase())){
-                reader.on("end", async () => {
+                await reader.on("end", async () => {
                     console.log(`Generating optimised file`)
                     await sharp(path.join(filePath))
                         .webp()
@@ -132,7 +132,7 @@ Router.post("/upload", async (req, res) => {
 
                 })
 
-                req.busboy.on('finish', async () => {
+                await req.busboy.on('finish', async () => {
                     await sharp(filePath)
                         .resize(NORMAL_SIZE)
                         .toFile(path.resolve(normalFolder, customFileName))
