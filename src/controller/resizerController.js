@@ -129,53 +129,62 @@ Router.post("/upload", async (req, res) => {
                     await sharp(path.join(filePath))
                         .webp()
                         .toFile(path.resolve(highFolderWebp, customFileName_webp))
+                        .then(async (_buffer) => { 
+                                await sharp(filePath)
+                                    .resize(NORMAL_SIZE)
+                                    .toFile(path.resolve(normalFolder, customFileName))
+                                    .then(async (_buffer) => { }).catch(err => {
+                                        console.log(err)
+                                        res.status(500).json(generateErrorResponse('Error on resize image to normal quality', { errMsg: err }))
+                                    })
+                                console.log("2=> generer")
+
+
+
+                                await sharp(path.join(normalFolder, customFileName))
+                                    .webp()
+                                    .toFile(path.resolve(normalFolderWebp, customFileName_webp))
+
+                                console.log("3=> generer")
+
+                                await sharp(filePath)
+                                    .resize(MEDIUM_SIZE)
+                                    .toFile(path.resolve(mediumFolder, customFileName))
+                                    .then(async (_buffer) => { })
+                                    .catch(err => {
+                                        console.log(err)
+                                        res.status(500).json(generateErrorResponse('Error on resize image to medium quality', err))
+                                    })
+                                console.log("4=> generer")
+
+
+                                await sharp(path.join(mediumFolder, customFileName))
+                                    .webp()
+                                    .toFile(path.resolve(mediumFolderWebp, customFileName_webp))
+                                console.log("5=> generer")
+
+                                await sharp(path.join(mediumFolder, customFileName))
+                                    .resize(LOW_SIZE)
+                                    .toFile(path.resolve(lowFolder, customFileName))
+                                console.log("6=> generer")
+
+                                await sharp(path.join(lowFolder, customFileName))
+                                    .webp()
+                                    .toFile(path.resolve(lowFolderWebp, customFileName_webp))
+
+                                console.log(`${customFileName} uploaded and resized sussefully`)
+
+                                res.status(200).json(generateSuccessResponse("File uploaded successfully", { file: customFileName }))
+                           
+                            console.log(`upload of ${fileName} is complete`)
+                        }).catch(err => {
+                            console.log(err)
+                            res.status(500).json(generateErrorResponse('Error on resize image to high quality', { errMsg: err }))
+                        })
+                    console.log("1=> generer")
 
                 })
 
-                await req.busboy.on('finish', async () => {
-                    await sharp(filePath)
-                        .resize(NORMAL_SIZE)
-                        .toFile(path.resolve(normalFolder, customFileName))
-                        .then(async (_buffer) => { }).catch(err => {
-                            console.log(err)
-                            res.status(500).json(generateErrorResponse('Error on resize image to normal quality', { errMsg: err }))
-                        })
-
-                
-
-                    await sharp(path.join(normalFolder, customFileName))
-                        .webp()
-                        .toFile(path.resolve(normalFolderWebp, customFileName_webp))
-                   
-
-                    await sharp(filePath)
-                        .resize(MEDIUM_SIZE)
-                        .toFile(path.resolve(mediumFolder, customFileName))
-                        .then(async (_buffer) => { })
-                        .catch(err => {
-                            console.log(err)
-                            res.status(500).json(generateErrorResponse('Error on resize image to medium quality', err))
-                        })
-                  
-
-                    await sharp(path.join(mediumFolder, customFileName))
-                        .webp()
-                        .toFile(path.resolve(mediumFolderWebp, customFileName_webp))
-                   
-                    await sharp(path.join(mediumFolder, customFileName))
-                        .resize(LOW_SIZE)
-                        .toFile(path.resolve(lowFolder, customFileName))
-                    
-                    await sharp(path.join(lowFolder, customFileName))
-                        .webp()
-                        .toFile(path.resolve(lowFolderWebp, customFileName_webp))
-                  
-                    console.log(`${customFileName} uploaded and resized sussefully`)
-
-                    res.status(200).json(generateSuccessResponse("File uploaded successfully", { file: customFileName }))
-                })
-
-                console.log(`upload of ${fileName} is complete`)
                 
             }else if(fileExtension in VIDEO_EXT_ARRAY){
                 
