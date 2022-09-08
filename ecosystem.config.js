@@ -1,6 +1,6 @@
 module.exports = {
   apps: [{
-    script: 'src/www',
+    script: 'src/cdn.js',
     watch: '.'
   }],
 
