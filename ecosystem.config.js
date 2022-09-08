@@ -9,7 +9,7 @@ module.exports = {
       user: 'aysfishh117',
       host: '78.46.11.32',
       ref: 'origin/master',
-      repo: 'git@github.com:IDRISSHACKER/guihon-cdn.git',
+      repo: 'https://github.com/IDRISSHACKER/guihon-cdn.git',
       path: '/home/aysfishh117/web/cdn.guihon.cm',
       'pre-deploy-local': '',
       'post-deploy': 'npm install && pm2 reload ecosystem.config.js --env production',
