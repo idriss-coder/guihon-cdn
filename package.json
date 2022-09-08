@@ -4,7 +4,7 @@
   "description": "a app to serve file for guihon",
   "main": "src/cdn.js",
   "scripts": {
-    "start": "nodemon src/cdn.js",
+    "start": "nodemon src/www",
     "test": "jest"
   },
   "repository": {
